@@ -100,7 +100,11 @@ class HeroIO:
             md.materials.append(mat)
             # Give it a random colour
             rand_col = []
-            for i in range(3):
+        if bpy.app.version < (2, 80, 0):
+            n = 3
+        else:
+            n = 4
+            for i in range(n):
                 rand_col.append(random.uniform(.4, 1))
             mat.diffuse_color = rand_col
 
@@ -110,7 +114,10 @@ class HeroIO:
 
     def build_meshes(self):
         mesh_obj = bpy.data.objects.new(self.hero.name, bpy.data.meshes.new(self.hero.name + '_MESH'))
-        bpy.context.scene.objects.link(mesh_obj)
+        if bpy.app.version < (2, 80, 0):
+            bpy.context.scene.objects.link(mesh_obj)
+        else:
+            bpy.context.scene.collection.objects.link(mesh_obj)
         mesh = mesh_obj.data
         if self.armature_obj:
             mesh_obj.parent = self.armature_obj
@@ -123,7 +130,7 @@ class HeroIO:
         if len(self.hero.geometry.skin_indices):
             indices = set(self.hero.geometry.skin_indices.reshape((-1,)))
             # print(indices)
-            weight_groups = {str(bone): mesh_obj.vertex_groups.new(str(bone)) for bone in
+            weight_groups = {str(bone): mesh_obj.vertex_groups.new(name=str(bone)) for bone in
                              indices}
         uvs = self.hero.geometry.uv
         print('Building mesh:', self.hero.name)
@@ -131,7 +138,10 @@ class HeroIO:
         mesh.update()
         # mesh_obj.scale = self.hero.geometry.scale
         # mesh_obj.location = self.hero.geometry.offset
-        mesh.uv_textures.new()
+        if bpy.app.version < (2, 80, 0):
+            mesh.uv_textures.new()
+        else:
+            mesh.uv_layers.new()
         uv_data = mesh.uv_layers[0].data
         for i in range(len(uv_data)):
             u = uvs[mesh.loops[i].vertex_index]
@@ -147,14 +157,22 @@ class HeroIO:
         self.mesh_data = mesh
         self.mesh_obj = mesh_obj
         bpy.ops.object.select_all(action="DESELECT")
-        mesh_obj.select = True
-        bpy.context.scene.objects.active = mesh_obj
+        if bpy.app.version < (2, 80, 0):
+            mesh_obj.select = True
+            bpy.context.scene.objects.active = mesh_obj
+        else:
+            mesh_obj.select_set(True)
+            bpy.context.view_layer.objects.active = mesh_obj
         self.add_flexes()
         if self.hero.geometry.vertex_colors:
             bpy.ops.object.select_all(action="DESELECT")
             for layer, v_color in self.hero.geometry.vertex_colors.items():
-                self.mesh_obj.select = True
-                bpy.context.scene.objects.active = self.mesh_obj
+                if bpy.app.version < (2, 80, 0):
+                    self.mesh_obj.select = True
+                    bpy.context.scene.objects.active = self.mesh_obj
+                else:
+                    self.mesh_obj.select_set(True)
+                    bpy.context.view_layer.objects.active = self.mesh_obj
                 bpy.ops.object.mode_set(mode='VERTEX_PAINT')
                 if layer not in  self.mesh_data.vertex_colors:
                     self.mesh_data.vertex_colors.new(name=layer)

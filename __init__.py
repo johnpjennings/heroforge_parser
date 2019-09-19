@@ -5,7 +5,7 @@ bl_info = {
     "name": "HeroForge model import",
     "author": "RED_EYE",
     "version": (0, 1),
-    "blender": (2, 79, 0),
+    "blender": (2, 80, 0),
     "location": "File > Import-Export > HeroForge model (.ckb)",
     "description": "Addon allows to import HeroForge models",
     "category": "Import-Export"
@@ -45,14 +45,21 @@ def menu_import(self, context):
 
 
 def register():
-    bpy.utils.register_module(__name__)
-    bpy.types.INFO_MT_file_import.append(menu_import)
+    bpy.utils.register_class(HeroForge_OT_operator)
+
+    if bpy.app.version < (2, 80, 0):
+        bpy.types.INFO_MT_file_import.append(menu_import)
+    else:
+        bpy.types.TOPBAR_MT_file_import.append(menu_import)
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-    bpy.types.INFO_MT_file_import.remove(menu_import)
+    bpy.utils.unregister_class(HeroForge_OT_operator)
 
+    if bpy.app.version < (2, 80, 0):
+        bpy.types.INFO_MT_file_import.remove(menu_import)
+    else:
+        bpy.types.TOPBAR_MT_file_import.remove(menu_import)
 
 if __name__ == "__main__":
     register()
