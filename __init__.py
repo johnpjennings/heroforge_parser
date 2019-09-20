@@ -43,9 +43,28 @@ class HeroForge_OT_operator(bpy.types.Operator):
 def menu_import(self, context):
     self.layout.operator(HeroForge_OT_operator.bl_idname, text="HeroForge model (.ckb)")
 
+def make_annotations(cls):
+    """Converts class fields to annotations if running with Blender 2.8"""
+    if bpy.app.version < (2, 80):
+        return cls
+    bl_props = {k: v for k, v in cls.__dict__.items() if isinstance(v, tuple)}
+    if bl_props:
+        if '__annotations__' not in cls.__dict__:
+            setattr(cls, '__annotations__', {})
+        annotations = cls.__dict__['__annotations__']
+        for k, v in bl_props.items():
+            annotations[k] = v
+            delattr(cls, k)
+    return cls
+
+classes = (
+    HeroForge_OT_operator,
+)
 
 def register():
-    bpy.utils.register_class(HeroForge_OT_operator)
+    for cls in classes:
+        make_annotations(cls)
+        bpy.utils.register_class(cls)
 
     if bpy.app.version < (2, 80, 0):
         bpy.types.INFO_MT_file_import.append(menu_import)
@@ -54,7 +73,8 @@ def register():
 
 
 def unregister():
-    bpy.utils.unregister_class(HeroForge_OT_operator)
+    for cls in reversed(classes):
+        bpy.utils.unregister_class(cls)
 
     if bpy.app.version < (2, 80, 0):
         bpy.types.INFO_MT_file_import.remove(menu_import)
